@@ -1,0 +1,15 @@
+dist: trusty
+sudo: false
+addons:
+        apt:
+                packages:
+                        - libgit2-dev
+language: python
+python:
+        - "3.5"
+        - "3.6"
+cache: pip
+before_script:
+        - pip install pygit2==0.19.*
+script:
+        - python -m unittest discover .
