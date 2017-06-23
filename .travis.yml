@@ -10,6 +10,6 @@ python:
         - "3.6"
 cache: pip
 before_script:
-        - pip install pygit2==0.19.*
+        - pip install pygit2==0.19.* PyGithub
 script:
         - python -m unittest discover .
