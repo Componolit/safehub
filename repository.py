@@ -1,5 +1,6 @@
 
 from urllib.parse import urlparse
+from github import Github
 
 def _parse_url(url):
     url_obj = urlparse(url)
@@ -31,15 +32,18 @@ class Repository:
 
     def __init__(self, base, url, token):
         self.base = base
-        self.parse_url(url)
+        self.gh = Github(token)
+        self.connect(url)
         self.init_fs()
 
-    def parse_url(self, url):
-        self.user, self.repo = _parse_url(url)
+    def connect(self, url):
+        user, repo = _parse_url(url)
+        self.user = gh.get_user(user)
+        self.repo = self.user.get_repo(repo)
 
     def init_fs(self):
-        if not os.path.isdir(_gen_path(self.base, self.user)):
-            os.mkdir(_gen_path(self.base, self.user))
-        if not os.path.isdir(_gen_path(self.base, self.user, self.repo)):
-            os.mkdir(_gen_path(self.base, self.user, self.repo))
+        if not os.path.isdir(_gen_path(self.base, self.user.login)):
+            os.mkdir(_gen_path(self.base, self.user.login))
+        if not os.path.isdir(_gen_path(self.base, self.user.login, self.repo.name)):
+            os.mkdir(_gen_path(self.base, self.user.login, self.repo.name))
 
