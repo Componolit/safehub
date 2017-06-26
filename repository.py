@@ -4,7 +4,12 @@ from urllib.parse import urlparse
 def _parse_url(url):
     url_obj = urlparse(url)
     user_repo = url_obj.path.strip("/").strip(".git").split("/")
-    return (user_repo[0], user_repo[1])
+    if not len(user_repo) == 2:
+        raise ValueError("Invalid URL: {}".format(url))
+    try:
+        return (user_repo[0], user_repo[1])
+    except IndexError:
+        raise ValueError("Invalid URL: {}".format(url))
 
 def _gen_repo_git_url(user, repo):
     return "https://github.com/{}/{}.git".format(user, repo)
