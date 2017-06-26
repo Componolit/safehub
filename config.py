@@ -33,3 +33,18 @@ def _get_base_path(login_defs, home, uid):
     else:
         raise ValueError("UID outside defined UID ranges.")
 
+
+def load_config():
+    cfg = None
+    try:
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        cfg = open(dir_path + "/safehub.json", "r")
+    except FileNotFoundError:
+        try:
+            cfg = open(os.getenv("HOME") + "/.safehub.json", "r")
+        except FileNotFoundError:
+            try:
+                cfg = open("/etc/safehub/safehub.json", "r")
+            except FileNotFoundError:
+                raise FileNotFoundError("Failed to find configuration file.")
+    return json.load(cfg)
