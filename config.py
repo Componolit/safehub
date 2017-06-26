@@ -14,7 +14,7 @@ def _get_base_path(login_defs, home, uid):
     SYS_UID_MIN = 100
     SYS_UID_MAX = 999
     if uid == 0:
-        return "/" + home.strip("/") + "/.safehub/"
+        return "/" + home.strip("/") + "/.safehub"
     tabsplit = re.compile("\t+| +")
     for line in login_defs:
         line = line.strip('\n')
@@ -27,9 +27,9 @@ def _get_base_path(login_defs, home, uid):
         elif line.startswith("SYS_UID_MAX"):
             SYS_UID_MAX = int(tabsplit.split(line)[1])
     if uid <= UID_MAX and uid >= UID_MIN:
-        return "/" + home.strip("/") + "/.safehub/"
+        return "/" + home.strip("/") + "/.safehub"
     elif uid <= SYS_UID_MAX and uid >= SYS_UID_MIN:
-        return "/" + home.strip("/") + "/"
+        return "/" + home.strip("/")
     else:
         raise ValueError("UID outside defined UID ranges.")
 
