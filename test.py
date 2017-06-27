@@ -53,3 +53,6 @@ class Github(unittest.TestCase):
         self.assertEqual("/base/jklmnn", _gen_path(base, "jklmnn"))
         self.assertEqual("/base/jklmnn/safehub", _gen_path(base, "jklmnn", "safehub"))
         self.assertEqual("/base/jklmnn/safehub/wiki.git", _gen_path(base, "jklmnn", "safehub", "wiki"))
+        self.assertRaises(ValueError, _gen_path, base, "jklmnn", "safehub", "test")
+        self.assertRaises(RuntimeError, _gen_path, base, None, "safehub", "code")
+        self.assertRaises(RuntimeError, _gen_path, base, "jklmnn", None, "wiki")

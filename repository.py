@@ -19,6 +19,8 @@ def _gen_wiki_git_url(user, repo):
     return "https://github.com/{}/{}.wiki.git".format(user, repo)
 
 def _gen_path(base, user=None, repo=None, part=None):
+    if part not in ["wiki", "code", "meta", None]:
+        raise ValueError("Invalid part: {}".format(part))
     base = base.rstrip("/")
     if user:
         base += "/{}".format(user)
@@ -26,6 +28,12 @@ def _gen_path(base, user=None, repo=None, part=None):
             base += "/{}".format(repo)
             if part:
                 base += "/{}.git".format(part)
+        else:
+            if part:
+                raise RuntimeError("If part is set, repo must not be None")
+    else:
+        if repo or part:
+            raise RuntimeError("If repo or part is set, user must not be None")
     return base
 
 class Repository:
