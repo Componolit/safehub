@@ -42,10 +42,10 @@ class Github(unittest.TestCase):
         self.assertRaises(ValueError, _parse_url, "https//github.com/jklmnn/safehub.git")
 
     def test_gen_repo_git_url(self):
-        self.assertEqual("https://github.com/jklmnn/safehub.git", _gen_repo_git_url("jklmnn", "safehub"))
+        self.assertEqual("git://github.com/jklmnn/safehub.git", _gen_repo_git_url("jklmnn", "safehub"))
 
     def test_gen_wiki_git_url(self):
-        self.assertEqual("https://github.com/jklmnn/safehub.wiki.git", _gen_wiki_git_url("jklmnn", "safehub"))
+        self.assertEqual("git://github.com/jklmnn/safehub.wiki.git", _gen_wiki_git_url("jklmnn", "safehub"))
 
     def test_gen_path(self):
         base = "/base/"

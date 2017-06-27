@@ -1,6 +1,8 @@
 
+import os
 from urllib.parse import urlparse
 from github import Github
+import pygit2 as git
 
 def _parse_url(url):
     url_obj = urlparse(url)
@@ -13,10 +15,10 @@ def _parse_url(url):
         raise ValueError("Invalid URL: {}".format(url))
 
 def _gen_repo_git_url(user, repo):
-    return "https://github.com/{}/{}.git".format(user, repo)
+    return "git://github.com/{}/{}.git".format(user, repo)
 
 def _gen_wiki_git_url(user, repo):
-    return "https://github.com/{}/{}.wiki.git".format(user, repo)
+    return "git://github.com/{}/{}.wiki.git".format(user, repo)
 
 def _gen_path(base, user=None, repo=None, part=None):
     if part not in ["wiki", "code", "meta", None]:
@@ -38,6 +40,10 @@ def _gen_path(base, user=None, repo=None, part=None):
 
 class Repository:
 
+    code = None
+    wiki = None
+    meta = None
+
     def __init__(self, base, url, token):
         self.base = base
         self.gh = Github(token)
@@ -46,7 +52,7 @@ class Repository:
 
     def connect(self, url):
         user, repo = _parse_url(url)
-        self.user = gh.get_user(user)
+        self.user = self.gh.get_user(user)
         self.repo = self.user.get_repo(repo)
 
     def init_fs(self):
@@ -54,4 +60,36 @@ class Repository:
             os.mkdir(_gen_path(self.base, self.user.login))
         if not os.path.isdir(_gen_path(self.base, self.user.login, self.repo.name)):
             os.mkdir(_gen_path(self.base, self.user.login, self.repo.name))
+
+    def local_path(self, part):
+        return _gen_path(self.base, self.user.login, self.repo.name, part)
+
+    def _update(self, part):
+        repo = getattr(self, part)
+        if not os.path.isdir(self.local_path(part)):
+            git.clone_repository(_gen_repo_git_url(self.user.login, self.repo.name), self.local_path(part), bare=True)
+        if not repo:
+            repo = git.Repository(self.local_path(part))
+        repo.remotes[0].fetch()
+
+    def update_code(self):
+        self._update("code")
+
+    def update_wiki(self):
+        self._update("wiki")
+
+    def update_meta(self):
+        if not os.path.isdir(self.local_path("meta")):
+            git.init_repository(self.local_path("meta"), bare=True)
+        if not self.meta:
+            rpath = "/tmp/safehub/meta-{}".format(os.getpid())
+            git.clone_repository(self.local_path("meta"), rpath)
+            self.meta = git.Repository(rpath)
+
+
+    
+    def update(self):
+        self.update_code()
+        self.update_wiki()
+        self.update_meta()
 
