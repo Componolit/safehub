@@ -26,13 +26,17 @@ class Git:
             return cls(path)
 
     @classmethod
+    def mirror(cls, url, path, instantiate=False):
+        return cls.clone(url, path, instantiate=instantiate, mirror=True)
+
+    @classmethod
     def init(cls, path, instantiate=False):
         _exec(['git', 'init', '--bare', path])
         if instantiate:
             return cls(path)
 
     def fetch(self):
-        _exec(['git', 'fetch'], self.cwd)
+        _exec(['git', 'fetch', '--all'], self.cwd)
 
     def gen_file_list(self):
         filelist = _exec(['git', 'status', '-s'], self.cwd).decode('utf-8')

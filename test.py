@@ -112,6 +112,9 @@ class GitTest(unittest.TestCase):
     def test_add(self):
         with open(self.repo + '/testfile', 'w') as testfile:
             testfile.write('test\n')
+        os.mkdir(self.repo + '/testdir/')
+        with open(self.repo + '/testdir/testfile2', 'w') as testfile:
+            testfile.write('test\n')
         repo = Git(self.repo)
         repo.add()
         p = Popen(['git', 'status', '-s'], cwd=self.repo, stdout=PIPE, stderr=PIPE)
@@ -135,6 +138,25 @@ class GitTest(unittest.TestCase):
             raise RuntimeError(err)
         self.assertEqual('testcommit', out.decode('utf-8').split(' ')[1].strip())
 
+    def test_fetch(self):
+        repo = Git.mirror(self.bare, self.basepath + 'fetchtest', instantiate=True)
+        work_clone = self.basepath + 'tmpfetch'
+        Popen(['git', 'clone', self.bare, work_clone], stdout=PIPE, stderr=PIPE).communicate()
+        Popen(['git', 'checkout', '-b', 'fetchtest'], cwd=work_clone, stdout=PIPE, stderr=PIPE).communicate()
+        with open(work_clone + '/fetchfile', 'w') as fetchfile:
+            fetchfile.write("fetch\n")
+        Popen(['git', 'add', 'fetchfile'], cwd=work_clone, stdout=PIPE, stderr=PIPE).communicate()
+        Popen(['git', 'commit', '-a', '-m', 'fetchtest'], cwd=work_clone, stdout=PIPE, stderr=PIPE).communicate()
+        Popen(['git', 'push', '--set-upstream', 'origin', 'fetchtest'], cwd=work_clone, stdout=PIPE, stderr=PIPE).communicate()
+        repo.fetch()
+        p = Popen(['git', 'branch'], cwd=self.basepath + 'fetchtest', stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            raise RuntimeError(err)
+        self.assertIn('fetchtest', [branch.strip() for branch in out.decode('utf-8').split('\n')])
+        p = Popen(['git', 'log', 'fetchtest', '-1', '--oneline'], cwd=self.basepath + 'fetchtest', stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        self.assertEqual('fetchtest', out.decode('utf-8').split(' ')[1].strip())
 
 
 
