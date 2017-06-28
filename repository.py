@@ -2,7 +2,6 @@
 import os
 from urllib.parse import urlparse
 from github import Github
-import pygit2 as git
 
 def _parse_url(url):
     url_obj = urlparse(url)
@@ -67,10 +66,9 @@ class Repository:
     def _update(self, part):
         repo = getattr(self, part)
         if not os.path.isdir(self.local_path(part)):
-            git.clone_repository(_gen_repo_git_url(self.user.login, self.repo.name), self.local_path(part), bare=True)
+            pass
         if not repo:
-            repo = git.Repository(self.local_path(part))
-        repo.remotes[0].fetch()
+            pass
 
     def update_code(self):
         self._update("code")
@@ -80,11 +78,9 @@ class Repository:
 
     def update_meta(self):
         if not os.path.isdir(self.local_path("meta")):
-            git.init_repository(self.local_path("meta"), bare=True)
+            pass
         if not self.meta:
             rpath = "/tmp/safehub/meta-{}".format(os.getpid())
-            git.clone_repository(self.local_path("meta"), rpath)
-            self.meta = git.Repository(rpath)
 
 
     
