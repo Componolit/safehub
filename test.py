@@ -92,7 +92,7 @@ class GitTest(unittest.TestCase):
         if not os.path.isdir(self.bare):
             os.mkdir(self.bare)
         Popen(['git', 'init'], cwd=self.repo, stdout=PIPE).communicate()
-        Popen(['git', 'init'], cwd=self.bare, stdout=PIPE).communicate()
+        Popen(['git', 'init',  '--bare'], cwd=self.bare, stdout=PIPE).communicate()
 
     def test_init(self):
         Git.init(self.basepath + 'inittest')
@@ -121,6 +121,19 @@ class GitTest(unittest.TestCase):
         for entry in out.split('\n'):
             if entry.startswith('??'):
                 raise ValueError("No untracked files should exist: {}".format(err))
+
+    def test_push(self):
+        repo = Git.clone(self.bare, self.basepath + 'pushtest', instantiate=True)
+        with open(self.basepath + 'pushtest/data', 'w') as testfile:
+            testfile.write('data\n')
+        repo.add()
+        repo.commit('testcommit')
+        repo.push()
+        p = Popen(['git', 'log', '-1', '--oneline'], cwd=self.bare, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            raise RuntimeError(err)
+        self.assertEqual('testcommit', out.decode('utf-8').split(' ')[1].strip())
 
 
 

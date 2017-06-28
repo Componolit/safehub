@@ -5,7 +5,10 @@ def _exec(args, cwd=None):
     proc = subprocess.Popen(args, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
     if not proc.returncode == 0:
-        raise RuntimeError(out)
+        if err:
+            raise RuntimeError(err)
+        else:
+            raise RuntimeError(out)
     return out
 
 class Git:
