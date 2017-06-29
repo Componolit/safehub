@@ -9,6 +9,7 @@ from subprocess import Popen, PIPE
 from config import ConfigBase
 from git import Git
 from repository import Repository
+from github import GitHubBase
 
 class Compile(unittest.TestCase):
 
@@ -184,3 +185,30 @@ class RepoTest(unittest.TestCase):
         self.assertRaises(ValueError, Repository._gen_path, base, "jklmnn", "safehub", "test")
         self.assertRaises(RuntimeError, Repository._gen_path, base, None, "safehub", "code")
         self.assertRaises(RuntimeError, Repository._gen_path, base, "jklmnn", None, "wiki")
+
+class GitHub(unittest.TestCase, GitHubBase):
+
+    def _get(self, url):
+        tdata = {"one": "[1]", "two": "[2,2]", "three": "[3,3,3]"}
+        first = "one"
+        last = "three"
+        nxt = {"one": "two", "two": "three"}
+        prev = {"two": "one", "three": "two"}
+        if url in tdata:
+            return (tdata[url],
+                    {"Link": '<one>; rel="first", <three>; rel="last"' +
+                        ', <{}>; rel="next"'.format(nxt[url]) if url in nxt else '' +
+                        ', <{}>; rel="prev"'.format(prev[url]) if url in prev else '' })
+
+    def test_paging(self):
+        first, last, nxt, prev = GitHubBase._parse_link('<https://api.github.com/repositories/test/forks?page=3>; rel="next", <https://api.github.com/repositories/test/forks?page=495>; rel="last", <https://api.github.com/repositories/test/forks?page=1>; rel="first", <https://api.github.com/repositories/test/forks?page=1>; rel="prev"')
+        self.assertEqual("https://api.github.com/repositories/test/forks?page=3", nxt)
+        self.assertEqual("https://api.github.com/repositories/test/forks?page=495", last)
+        self.assertEqual("https://api.github.com/repositories/test/forks?page=1", first)
+        self.assertEqual("https://api.github.com/repositories/test/forks?page=1", prev)
+        first, last, nxt, prev = GitHubBase._parse_link('<https://api.github.com/repositories/test/forks?page=2>; rel="next", <https://api.github.com/repositories/test/forks?page=495>; rel="last", <https://api.github.com/repositories/test/forks?page=1>; rel="first"')
+        self.assertIsNone(prev)
+
+    def test_page_gen(self):
+        self.assertEqual([1,2,2,3,3,3], self.gen_data("one"))
+
