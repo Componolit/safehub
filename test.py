@@ -6,10 +6,10 @@ import glob
 import py_compile
 from subprocess import Popen, PIPE
 
-from config import ConfigBase
+from config import ConfigBase, Config
 from git import Git
 from repository import Repository
-from github import GitHubBase
+from github import GitHubBase, GitHub, TemporaryError
 
 class Compile(unittest.TestCase):
 
@@ -33,6 +33,11 @@ class ConfigTest(unittest.TestCase, ConfigBase):
 
     def get_uid(self):
         return self.uid
+
+    def test_inst(self):
+        Config()
+        baseconfig = ConfigBase()
+        self.assertRaises(NotImplementedError, baseconfig.get_base_path)
 
     def test_base(self):
 
@@ -76,10 +81,6 @@ class ConfigTest(unittest.TestCase, ConfigBase):
         self.uid = 1000
         self.assertRaises(ValueError, self.get_base_path)
     
-    def test_impl(self):
-        baseconfig = ConfigBase()
-        self.assertRaises(NotImplementedError, baseconfig.get_base_path)
-
 class GitTest(unittest.TestCase):
 
     def setUp(self):
@@ -94,6 +95,9 @@ class GitTest(unittest.TestCase):
             os.mkdir(self.bare)
         Popen(['git', 'init'], cwd=self.repo, stdout=PIPE).communicate()
         Popen(['git', 'init',  '--bare'], cwd=self.bare, stdout=PIPE).communicate()
+
+    def test_inst(self):
+        Git("")
 
     def test_init(self):
         Git.init(self.basepath + 'inittest')
@@ -163,6 +167,10 @@ class GitTest(unittest.TestCase):
 
 class RepoTest(unittest.TestCase):
 
+    def test_inst(self):
+        Repository("/tmp/safehub_repository_test.{}".format(os.getpid()), "https://github.com/jklmnn/safehub", "", "", "")
+        Repository("/tmp/safehub_repository_test.{}".format(os.getpid()), "https://github.com/jklmnn/safehub", "", "", "")
+
     def test_parse_url(self):
         self.assertEqual(("jklmnn", "safehub"), Repository._parse_url("https://github.com/jklmnn/safehub"))
         self.assertEqual(("jklmnn", "safehub"), Repository._parse_url("https://github.com/jklmnn/safehub.git"))
@@ -186,7 +194,10 @@ class RepoTest(unittest.TestCase):
         self.assertRaises(RuntimeError, Repository._gen_path, base, None, "safehub", "code")
         self.assertRaises(RuntimeError, Repository._gen_path, base, "jklmnn", None, "wiki")
 
-class GitHub(unittest.TestCase, GitHubBase):
+class GitHubTest(unittest.TestCase, GitHubBase):
+
+    def setUp(self):
+        self.basepath = '/tmp/safehub_fetch_test.{}/'.format(os.getpid())
 
     def _get(self, url):
         tdata = {"one": "[1]", "two": "[2,2]", "three": "[3,3,3]"}
@@ -200,6 +211,18 @@ class GitHub(unittest.TestCase, GitHubBase):
                         ', <{}>; rel="next"'.format(nxt[url]) if url in nxt else '' +
                         ', <{}>; rel="prev"'.format(prev[url]) if url in prev else '' })
 
+    def get_data(self, user, repo, path):
+        if not user:
+            raise TemporaryError
+        return "[]"
+
+
+    def test_inst(self):
+        GitHub("")
+        ghb = GitHubBase()
+        self.assertRaises(NotImplementedError, ghb.get_data, "", "", "")
+        self.assertRaises(NotImplementedError, ghb._get, "")
+
     def test_paging(self):
         first, last, nxt, prev = GitHubBase._parse_link('<https://api.github.com/repositories/test/forks?page=3>; rel="next", <https://api.github.com/repositories/test/forks?page=495>; rel="last", <https://api.github.com/repositories/test/forks?page=1>; rel="first", <https://api.github.com/repositories/test/forks?page=1>; rel="prev"')
         self.assertEqual("https://api.github.com/repositories/test/forks?page=3", nxt)
@@ -211,4 +234,14 @@ class GitHub(unittest.TestCase, GitHubBase):
 
     def test_page_gen(self):
         self.assertEqual([1,2,2,3,3,3], self.gen_data("one"))
+
+    def test_fetch(self):
+        self.fetch_repository("user", "repo", self.basepath, "/", ["file1", "file2"])
+        self.fetch_repository("user", "repo", self.basepath, "/dir/", ["file3", "file4"])
+        self.fetch_repository(None, "repo", self.basepath, "/", ["file5", "file6"])
+        for f in ["/file1", "/file2", "/dir/file3", "/dir/file4"]:
+            with open(self.basepath + f, 'r') as tf:
+                self.assertEqual("[]", tf.read())
+        self.assertFalse(os.path.isfile(self.basepath + "/file5"))
+        self.assertFalse(os.path.isfile(self.basepath + "/file6"))
 

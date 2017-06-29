@@ -1,8 +1,10 @@
 
 import os
+import time
 from urllib.parse import urlparse
 
 from git import Git
+from github import GitHub
 
 
 class Repository:
@@ -11,9 +13,11 @@ class Repository:
     wiki = None
     meta = None
 
-    def __init__(self, base, url, token):
+    def __init__(self, base, url, token, user, repo):
         self.base = base
-        self.gh = Github(token)
+        self.user = user
+        self.repo = repo
+        self.gh = GitHub(token)
         self.connect(url)
         self.init_fs()
 
@@ -56,15 +60,13 @@ class Repository:
         return base
 
     def connect(self, url):
-        user, repo = _parse_url(url)
-        self.user = self.gh.get_user(user)
-        self.repo = self.user.get_repo(repo)
+        user, repo = Repository._parse_url(url)
 
     def init_fs(self):
-        if not os.path.isdir(_gen_path(self.base, self.user.login)):
-            os.mkdir(_gen_path(self.base, self.user.login))
-        if not os.path.isdir(_gen_path(self.base, self.user.login, self.repo.name)):
-            os.mkdir(_gen_path(self.base, self.user.login, self.repo.name))
+        if not os.path.isdir(Repository._gen_path(self.base, self.user)):
+            os.mkdir(Repository._gen_path(self.base, self.user))
+        if not os.path.isdir(Repository._gen_path(self.base, self.user, self.repo)):
+            os.mkdir(Repository._gen_path(self.base, self.user, self.repo))
 
     def local_path(self, part):
         return _gen_path(self.base, self.user.login, self.repo.name, part)
@@ -85,10 +87,14 @@ class Repository:
 
     def update_meta(self):
         if not os.path.isdir(self.local_path("meta")):
-            pass
+            Git.init(self.local_path("meta"))
         if not self.meta:
             rpath = "/tmp/safehub/meta-{}".format(os.getpid())
-
+            self.meta = Git.clone(self.local_path("meta"), rpath, instantiate=True)
+        gh.fetch_api(self.user, self.repo, self.meta.cwd)
+        self.meta.add()
+        self.meta.commit(time.strftime("%Y-%m-%dT%H-%M-%S"))
+        self.meta.push()
 
     
     def update(self):
