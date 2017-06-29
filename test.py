@@ -8,7 +8,7 @@ from subprocess import Popen, PIPE
 
 from config import ConfigBase
 from git import Git
-from repository import _parse_url, _gen_repo_git_url, _gen_wiki_git_url, _gen_path
+from repository import Repository
 
 class Compile(unittest.TestCase):
 
@@ -160,27 +160,27 @@ class GitTest(unittest.TestCase):
 
 
 
-class Github(unittest.TestCase):
+class RepoTest(unittest.TestCase):
 
     def test_parse_url(self):
-        self.assertEqual(("jklmnn", "safehub"), _parse_url("https://github.com/jklmnn/safehub"))
-        self.assertEqual(("jklmnn", "safehub"), _parse_url("https://github.com/jklmnn/safehub.git"))
-        self.assertRaises(ValueError, _parse_url, "https://github.com/jklmnn")
-        self.assertRaises(ValueError, _parse_url, "https:/github.com/jklmnn/safehub.git")
-        self.assertRaises(ValueError, _parse_url, "https//github.com/jklmnn/safehub.git")
+        self.assertEqual(("jklmnn", "safehub"), Repository._parse_url("https://github.com/jklmnn/safehub"))
+        self.assertEqual(("jklmnn", "safehub"), Repository._parse_url("https://github.com/jklmnn/safehub.git"))
+        self.assertRaises(ValueError, Repository._parse_url, "https://github.com/jklmnn")
+        self.assertRaises(ValueError, Repository._parse_url, "https:/github.com/jklmnn/safehub.git")
+        self.assertRaises(ValueError, Repository._parse_url, "https//github.com/jklmnn/safehub.git")
 
     def test_gen_repo_git_url(self):
-        self.assertEqual("git://github.com/jklmnn/safehub.git", _gen_repo_git_url("jklmnn", "safehub"))
+        self.assertEqual("git://github.com/jklmnn/safehub.git", Repository._gen_code_git_url("jklmnn", "safehub"))
 
     def test_gen_wiki_git_url(self):
-        self.assertEqual("git://github.com/jklmnn/safehub.wiki.git", _gen_wiki_git_url("jklmnn", "safehub"))
+        self.assertEqual("git://github.com/jklmnn/safehub.wiki.git", Repository._gen_wiki_git_url("jklmnn", "safehub"))
 
     def test_gen_path(self):
         base = "/base/"
-        self.assertEqual("/base", _gen_path(base))
-        self.assertEqual("/base/jklmnn", _gen_path(base, "jklmnn"))
-        self.assertEqual("/base/jklmnn/safehub", _gen_path(base, "jklmnn", "safehub"))
-        self.assertEqual("/base/jklmnn/safehub/wiki.git", _gen_path(base, "jklmnn", "safehub", "wiki"))
-        self.assertRaises(ValueError, _gen_path, base, "jklmnn", "safehub", "test")
-        self.assertRaises(RuntimeError, _gen_path, base, None, "safehub", "code")
-        self.assertRaises(RuntimeError, _gen_path, base, "jklmnn", None, "wiki")
+        self.assertEqual("/base", Repository._gen_path(base))
+        self.assertEqual("/base/jklmnn", Repository._gen_path(base, "jklmnn"))
+        self.assertEqual("/base/jklmnn/safehub", Repository._gen_path(base, "jklmnn", "safehub"))
+        self.assertEqual("/base/jklmnn/safehub/wiki.git", Repository._gen_path(base, "jklmnn", "safehub", "wiki"))
+        self.assertRaises(ValueError, Repository._gen_path, base, "jklmnn", "safehub", "test")
+        self.assertRaises(RuntimeError, Repository._gen_path, base, None, "safehub", "code")
+        self.assertRaises(RuntimeError, Repository._gen_path, base, "jklmnn", None, "wiki")

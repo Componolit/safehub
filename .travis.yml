@@ -4,8 +4,5 @@ language: python
 python:
         - "3.5"
         - "3.6"
-cache: pip
-before_script:
-        - pip install PyGithub
 script:
         - python -m unittest discover .
