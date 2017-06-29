@@ -2,7 +2,10 @@ dist: trusty
 sudo: false
 language: python
 python:
-        - "3.5"
-        - "3.6"
+    - "3.5"
+    - "3.6"
+cache: pip
+before_script:
+    - pip install requests
 script:
-        - python -m unittest discover .
+    - python -m unittest discover .
