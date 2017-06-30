@@ -223,7 +223,7 @@ class GitHubTest(unittest.TestCase, GitHubBase):
     def get_data(self, user, repo, path):
         if not user:
             raise TemporaryError
-        return "[]"
+        return []
 
 
     def test_inst(self):

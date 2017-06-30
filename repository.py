@@ -61,8 +61,6 @@ class Repository:
         self.user, self.repo = Repository._parse_url(url)
 
     def init_fs(self):
-#        if not os.path.isdir(Repository._gen_path(self.base, self.user)):
-#            os.makedirs(Repository._gen_path(self.base, self.user))
         if not os.path.isdir(Repository._gen_path(self.base, self.user, self.repo)):
             os.makedirs(Repository._gen_path(self.base, self.user, self.repo))
 
