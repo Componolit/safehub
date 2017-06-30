@@ -13,10 +13,8 @@ class Repository:
     wiki = None
     meta = None
 
-    def __init__(self, base, url, token, user, repo):
+    def __init__(self, base, url, token):
         self.base = base
-        self.user = user
-        self.repo = repo
         self.gh = GitHub(token)
         self.connect(url)
         self.init_fs()
@@ -60,24 +58,26 @@ class Repository:
         return base
 
     def connect(self, url):
-        user, repo = Repository._parse_url(url)
+        self.user, self.repo = Repository._parse_url(url)
 
     def init_fs(self):
-        if not os.path.isdir(Repository._gen_path(self.base, self.user)):
-            os.mkdir(Repository._gen_path(self.base, self.user))
+#        if not os.path.isdir(Repository._gen_path(self.base, self.user)):
+#            os.makedirs(Repository._gen_path(self.base, self.user))
         if not os.path.isdir(Repository._gen_path(self.base, self.user, self.repo)):
-            os.mkdir(Repository._gen_path(self.base, self.user, self.repo))
+            os.makedirs(Repository._gen_path(self.base, self.user, self.repo))
 
     def local_path(self, part):
-        return _gen_path(self.base, self.user.login, self.repo.name, part)
+        _gen_path = getattr(Repository, "_gen_path")
+        return _gen_path(self.base, self.user, self.repo, part)
 
     def _update(self, part):
         repo = getattr(self, part)
         get_path = getattr(Repository, "_gen_{}_git_url".format(part))
         if not os.path.isdir(self.local_path(part)):
-            repo = Git.mirror(get_path(self.user, self.repo), local_path(part), instantiate=True)
-        else:
-            repo.fetch()
+            repo = Git.mirror(get_path(self.user, self.repo), self.local_path(part), instantiate=True)
+        if not repo:
+            repo = Git(self.local_path(part))
+        repo.fetch()
 
     def update_code(self):
         self._update("code")
@@ -91,7 +91,7 @@ class Repository:
         if not self.meta:
             rpath = "/tmp/safehub/meta-{}".format(os.getpid())
             self.meta = Git.clone(self.local_path("meta"), rpath, instantiate=True)
-        gh.fetch_api(self.user, self.repo, self.meta.cwd)
+        self.gh.fetch_api(self.user, self.repo, self.meta.cwd)
         self.meta.add()
         self.meta.commit(time.strftime("%Y-%m-%dT%H-%M-%S"))
         self.meta.push()

@@ -71,6 +71,11 @@ class ConfigTest(unittest.TestCase, ConfigBase):
         self.uid = 450 
         self.assertEqual("/home/test/.safehub", self.get_base_path())
         
+        self.login_defs = ["SYS_UID_MAX\t \t400\n", "UID_MIN \t   450\n"]  
+        self.home = "/home/test"  
+        self.uid = 450 
+        self.assertEqual("/home/test/.safehub", self.get_base_path())
+        
         self.login_defs = []  
         self.home = "/root"  
         self.uid = 0 
@@ -168,8 +173,12 @@ class GitTest(unittest.TestCase):
 class RepoTest(unittest.TestCase):
 
     def test_inst(self):
-        Repository("/tmp/safehub_repository_test.{}".format(os.getpid()), "https://github.com/jklmnn/safehub", "", "", "")
-        Repository("/tmp/safehub_repository_test.{}".format(os.getpid()), "https://github.com/jklmnn/safehub", "", "", "")
+        r = Repository("/tmp/safehub_repository_test.{}".format(os.getpid()), "https://github.com/jklmnn/safehub", "")
+        self.assertEqual(r.user, "jklmnn")
+        self.assertEqual(r.repo, "safehub")
+        r = Repository("/tmp/safehub_repository_test.{}".format(os.getpid()), "https://github.com/jklmnn/safehub", "")
+        self.assertEqual(r.user, "jklmnn")
+        self.assertEqual(r.repo, "safehub")
 
     def test_parse_url(self):
         self.assertEqual(("jklmnn", "safehub"), Repository._parse_url("https://github.com/jklmnn/safehub"))

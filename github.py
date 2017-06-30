@@ -53,7 +53,7 @@ class GitHubBase:
             try:
                 data = self.get_data(user, repo, path + f)
                 with open(cwd + path + f, 'w') as df:
-                    df.write(data)
+                    json.dump(data, df)
             except TemporaryError:
                 pass
 
@@ -70,15 +70,19 @@ class GitHub(GitHubBase):
             response = self.session.get(url)
         except requests.exceptions.ConnectionError:
             raise TemporaryError
+        response.raise_for_status()
         if response.status_code != 200:
             if response.status_code >= 500:
-                raise TemporaryError
+                raise TemporaryError("{}: {}".format(response.url, response.status_code))
             else:
-                raise FatalError
+                raise FatalError("{}: {}".format(response.url, response.status_code))
         return response.content.decode('utf-8'), response.headers
 
     def get_data(self, user, repo, path):
-        return gen_data("/".join(self.base_url, user, repo, path.strip("/")))
+        return self.gen_data("/".join([self.base_url.strip("/"),
+                                       user.strip("/"),
+                                       repo.strip("/"),
+                                       path.strip("/")]))
 
     def fetch_api(self, user, repo, cwd):
         self.fetch_repository(user, repo, cwd, "/", ["collaborators", "comments", "keys", "forks"])

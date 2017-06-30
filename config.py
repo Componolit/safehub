@@ -1,7 +1,7 @@
 
 import os
 import re
-
+import json
 
 
 def get_base_path():
@@ -12,6 +12,7 @@ def get_base_path():
 
 class ConfigBase:
 
+    cfg = {}
 
     def get_login_defs(self):
         raise NotImplementedError("get_login_defs")
@@ -32,7 +33,7 @@ class ConfigBase:
         SYS_UID_MAX = 999
         if uid == 0:
             return "/" + home.strip("/") + "/.safehub"
-        tabsplit = re.compile("\t+| +")
+        tabsplit = re.compile("[\t ]+")
         for line in login_defs:
             line = line.strip('\n')
             if line.startswith("UID_MIN"):
@@ -52,19 +53,18 @@ class ConfigBase:
 
 
     def load_config(self):
-        cfg = None
         try:
             dir_path = os.path.dirname(os.path.realpath(__file__))
-            cfg = open(dir_path + "/safehub.json", "r")
+            self.cfg = open(dir_path + "/safehub.json", "r")
         except FileNotFoundError:
             try:
-                cfg = open(os.getenv("HOME") + "/.safehub.json", "r")
+                self.cfg = open(os.getenv("HOME") + "/.safehub.json", "r")
             except FileNotFoundError:
                 try:
-                    cfg = open("/etc/safehub/safehub.json", "r")
+                    self.cfg = open("/etc/safehub/safehub.json", "r")
                 except FileNotFoundError:
                     raise FileNotFoundError("Failed to find configuration file.")
-        return json.load(cfg)
+        return json.load(self.cfg)
 
 class Config(ConfigBase):
 
