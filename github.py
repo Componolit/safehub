@@ -47,15 +47,18 @@ class GitHubBase:
         raise NotImplementedError
         
     def fetch_repository(self, user, repo, cwd, path, files):
+        raw = {}
         if not os.path.isdir(cwd + path):
-            os.mkdir(cwd + path)
+            os.makedirs(cwd + path)
         for f in files:
             try:
-                data = self.get_data(user, repo, path + f)
-                with open(cwd + path + f, 'w') as df:
+                data = self.get_data(user, repo, path + f + "?state=all")
+                with open(cwd + path + f + ".json", 'w') as df:
                     json.dump(data, df)
+                raw[f] = data
             except TemporaryError:
                 pass
+        return raw
 
 
 class GitHub(GitHubBase):
@@ -66,6 +69,7 @@ class GitHub(GitHubBase):
         self.base_url = "https://api.github.com/repos/"
 
     def _get(self, url):
+        print(url)
         try:
             response = self.session.get(url)
         except requests.exceptions.ConnectionError:
@@ -85,4 +89,11 @@ class GitHub(GitHubBase):
                                        path.strip("/")]))
 
     def fetch_api(self, user, repo, cwd):
-        self.fetch_repository(user, repo, cwd, "/", ["collaborators", "comments", "keys", "forks"])
+        repo_json = self.fetch_repository(user, repo, cwd, "/", ["collaborators", "comments", "keys", "forks", "pulls", "issues", "labels", "milestones"])
+        if "pulls" in repo_json:
+            for pull in repo_json["pulls"]:
+                pulls = self.fetch_repository(user, repo, cwd, "/pulls/{}/".format(pull["number"]), ["reviews", "comments", "requested_reviewers"])
+        if "issues" in repo_json:
+            for issue in repo_json["issues"]:
+                issues = self.fetch_repository(user, repo, cwd, "/issues/{}/".format(issue["number"]), ["comments", "events", "labels"])
+
