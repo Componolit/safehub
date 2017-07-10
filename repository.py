@@ -51,8 +51,10 @@ class Repository:
                 if part:
                     base += "/{}.git".format(part)
             else:
-                if part:
-                    raise RuntimeError("If part is set, repo must not be None")
+                if part == "meta":
+                    base += "/{}.git".format(part)
+                elif part:
+                    raise RuntimeError("If part is set and not meta, repo must not be None")
         else:
             if repo or part:
                 raise RuntimeError("If repo or part is set, user must not be None")

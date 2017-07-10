@@ -9,6 +9,7 @@ from subprocess import Popen, PIPE
 from config import ConfigBase, Config
 from git import Git
 from repository import Repository
+from organization import Organization
 from github import GitHubBase, GitHub, TemporaryError
 
 class Compile(unittest.TestCase):
@@ -170,6 +171,17 @@ class GitTest(unittest.TestCase):
 
 
 
+class OrgTest(unittest.TestCase):
+
+    def test_inst(self):
+        o = Organization("/tmp/safehub_organization_test.{}".format(os.getpid()), "https://github.com/jklmnn", "")
+        self.assertEqual(o.user, "jklmnn")
+        self.assertEqual(o.repo, None)
+
+    def test_parse_url(self):
+        self.assertEqual("jklmnn", Organization._parse_url("https://github.com/jklmnn"))
+        self.assertRaises(ValueError, Organization._parse_url, "https.//github.com/jklmnn/safehub")
+
 class RepoTest(unittest.TestCase):
 
     def test_inst(self):
@@ -199,6 +211,7 @@ class RepoTest(unittest.TestCase):
         self.assertEqual("/base/jklmnn", Repository._gen_path(base, "jklmnn"))
         self.assertEqual("/base/jklmnn/safehub", Repository._gen_path(base, "jklmnn", "safehub"))
         self.assertEqual("/base/jklmnn/safehub/wiki.git", Repository._gen_path(base, "jklmnn", "safehub", "wiki"))
+        self.assertEqual("/base/jklmnn/meta.git", Repository._gen_path(base, "jklmnn", None, "meta"))
         self.assertRaises(ValueError, Repository._gen_path, base, "jklmnn", "safehub", "test")
         self.assertRaises(RuntimeError, Repository._gen_path, base, None, "safehub", "code")
         self.assertRaises(RuntimeError, Repository._gen_path, base, "jklmnn", None, "wiki")

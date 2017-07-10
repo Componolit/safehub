@@ -56,8 +56,8 @@ class GitHubBase:
                 with open(cwd + path + f + ".json", 'w') as df:
                     json.dump(data, df)
                 raw[f] = data
-            except TemporaryError:
-                pass
+            except TemporaryError as e:
+                print(e)
         return raw
 
 
@@ -66,7 +66,7 @@ class GitHub(GitHubBase):
     def __init__(self, token):
         self.session = requests.Session()
         self.session.headers.update({'Authorization': 'token {}'.format(token)})
-        self.base_url = "https://api.github.com/repos/"
+        self.base_url = "https://api.github.com/"
 
     def _get(self, url):
         print(url)
@@ -74,26 +74,30 @@ class GitHub(GitHubBase):
             response = self.session.get(url)
         except requests.exceptions.ConnectionError:
             raise TemporaryError
-        response.raise_for_status()
-        if response.status_code != 200:
-            if response.status_code >= 500:
-                raise TemporaryError("{}: {}".format(response.url, response.status_code))
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            if response.status_code >= 500 or response.status_code == 401:
+                raise TemporaryError("{}: {}, {}".format(response.url, response.status_code, str(e)))
             else:
-                raise FatalError("{}: {}".format(response.url, response.status_code))
+                raise FatalError("{}: {}, {}".format(response.url, response.status_code, str(e)))
         return response.content.decode('utf-8'), response.headers
 
     def get_data(self, user, repo, path):
-        return self.gen_data("/".join([self.base_url.strip("/"),
+        return self.gen_data("/".join(p for p in [self.base_url.strip("/"),
+                                       "repos" if repo else "orgs",
                                        user.strip("/"),
-                                       repo.strip("/"),
-                                       path.strip("/")]))
+                                       repo.strip("/") if repo else "",
+                                       path.strip("/")] if p != ""))
 
     def fetch_api(self, user, repo, cwd):
-        repo_json = self.fetch_repository(user, repo, cwd, "/", ["collaborators", "comments", "keys", "forks", "pulls", "issues", "labels", "milestones"])
-        if "pulls" in repo_json:
-            for pull in repo_json["pulls"]:
-                pulls = self.fetch_repository(user, repo, cwd, "/pulls/{}/".format(pull["number"]), ["reviews", "comments", "requested_reviewers"])
-        if "issues" in repo_json:
-            for issue in repo_json["issues"]:
-                issues = self.fetch_repository(user, repo, cwd, "/issues/{}/".format(issue["number"]), ["comments", "events", "labels"])
-
+        if repo:
+            repo_json = self.fetch_repository(user, repo, cwd, "/", ["collaborators", "comments", "keys", "forks", "pulls", "issues", "labels", "milestones"])
+            if "pulls" in repo_json:
+                for pull in repo_json["pulls"]:
+                    pulls = self.fetch_repository(user, repo, cwd, "/pulls/{}/".format(pull["number"]), ["reviews", "comments", "requested_reviewers"])
+            if "issues" in repo_json:
+                for issue in repo_json["issues"]:
+                    issues = self.fetch_repository(user, repo, cwd, "/issues/{}/".format(issue["number"]), ["comments", "events", "labels"])
+        else:
+            org_json = self.fetch_repository(user, repo, cwd, "/", ["members", "outside_collaborators", "teams", "hooks"])
