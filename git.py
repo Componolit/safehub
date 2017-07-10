@@ -1,14 +1,14 @@
 
 import subprocess
     
-def _exec(args, cwd=None):
+def _exec(args, cwd=None, ok_codes=[0]):
     proc = subprocess.Popen(args, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
-    if not proc.returncode == 0:
+    if proc.returncode not in ok_codes:
         if err:
-            raise RuntimeError(err)
+            raise RuntimeError("{}:{}".format(proc.returncode, err))
         else:
-            raise RuntimeError(out)
+            raise RuntimeError("{}:{}".format(proc.returncode, out))
     return out
 
 class Git:
@@ -53,7 +53,7 @@ class Git:
         _exec(args, self.cwd)
 
     def commit(self, message):
-        _exec(['git', 'commit', '-m', message, '-a'], self.cwd)
+        _exec(['git', 'commit', '-m', message, '-a'], self.cwd, ok_codes=[0,1])
 
     def push(self):
         _exec(['git', 'push', 'origin', 'master'], self.cwd)
