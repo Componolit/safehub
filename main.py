@@ -6,5 +6,5 @@ from repository import Repository
 if __name__ == "__main__":
     cfg = Config()
     for entry in cfg.load_config()["repositories"]:
-        r = Repository(cfg.get_base_path(), entry["url"], entry["token"])
-        r.update()
+        with Repository(cfg.get_base_path(), entry["url"], entry["token"]) as r:
+            r.update()

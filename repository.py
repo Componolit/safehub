@@ -1,6 +1,7 @@
 
 import os
 import time
+from shutil import rmtree
 from urllib.parse import urlparse
 
 from git import Git
@@ -100,3 +101,8 @@ class Repository:
         self.update_wiki()
         self.update_meta()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, base, url, token):
+        rmtree("/tmp/safehub/meta-{}".format(os.getpid()))
