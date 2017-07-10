@@ -47,6 +47,7 @@ class GitHubBase:
         raise NotImplementedError
         
     def fetch_repository(self, user, repo, cwd, path, files):
+        raw = {}
         if not os.path.isdir(cwd + path):
             os.mkdir(cwd + path)
         for f in files:
@@ -54,8 +55,10 @@ class GitHubBase:
                 data = self.get_data(user, repo, path + f)
                 with open(cwd + path + f, 'w') as df:
                     json.dump(data, df)
+                raw[f] = data
             except TemporaryError:
                 pass
+        return data
 
 
 class GitHub(GitHubBase):
@@ -85,4 +88,8 @@ class GitHub(GitHubBase):
                                        path.strip("/")]))
 
     def fetch_api(self, user, repo, cwd):
-        self.fetch_repository(user, repo, cwd, "/", ["collaborators", "comments", "keys", "forks"])
+        repo = self.fetch_repository(user, repo, cwd, "/", ["collaborators", "comments", "keys", "forks", "pulls"])
+        if "pulls" in repo:
+            for pull in repo["pulls"]:
+                pulls = self.fetch_repository(user, repo, cwd, "/pulls/{}/".format(pull["id"]), ["reviews", "comments", "requested_reviewers"])
+                print(pulls)
