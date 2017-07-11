@@ -1,11 +1,13 @@
 
 import os
 import re
+import logging
 from urllib.parse import urlparse
 
 from organization import Organization
 from git import Git
 
+logger = logging.getLogger(__name__)
 
 class Repository(Organization):
 
@@ -35,6 +37,8 @@ class Repository(Organization):
     def _gen_wiki_git_url(cls, user, repo):
         return "git://github.com/{}/{}.wiki.git".format(user, repo)
 
+    def get_github_url(self):
+        return "https://github.com/{}/{}".format(self.user, self.repo)
 
     def connect(self, url):
         self.user, self.repo = Repository._parse_url(url)
@@ -46,6 +50,7 @@ class Repository(Organization):
             try:
                 repo = Git.mirror(get_path(self.user, self.repo), self.local_path(part), instantiate=True)
             except RuntimeError as e:
+                logger.warn("Failed to clone repository: ".format(str(e)))
                 return
         if not repo:
             repo = Git(self.local_path(part))
@@ -55,7 +60,6 @@ class Repository(Organization):
         self._update("code")
 
     def update_wiki(self):
-        print("upate_wiki")
         self._update("wiki")
 
 

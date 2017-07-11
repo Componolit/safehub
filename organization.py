@@ -1,9 +1,12 @@
 
 import os
 import time
+import logging
 from shutil import rmtree
 from user import User
 from git import Git
+
+logger = logging.getLogger(__name__)
 
 class Organization(User):
 
@@ -31,5 +34,4 @@ class Organization(User):
         return _gen_path(self.base, self.user, self.repo, part)
 
     def __exit__(self, base, url, token):
-        pass
-        #rmtree(self.gen_rpath())
+        rmtree(self.gen_rpath())

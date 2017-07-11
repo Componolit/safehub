@@ -1,7 +1,10 @@
 
 import os
 import json
+import logging
 import requests
+
+logger = logging.getLogger(__name__)
 
 class TemporaryError(Exception):
     def __init__(self, message=""):
@@ -47,12 +50,12 @@ class GitHubBase:
             os.makedirs(cwd + path)
         for f in files:
             try:
-                data = self.get_data(user, repo, path + f + "?state=all")
+                data = self.get_data(user, repo, path + f + ("?state=all" if f == "issues" else ""))
                 with open(cwd + path + f + ".json", 'w') as df:
                     json.dump(data, df)
                 raw[f] = data
             except TemporaryError as e:
-                print(e)
+                logger.warning(str(e))
         return raw
 
 
@@ -64,7 +67,6 @@ class GitHub(GitHubBase):
         self.base_url = "https://api.github.com/"
 
     def _get(self, url):
-        print(url)
         try:
             response = self.session.get(url)
         except requests.exceptions.ConnectionError:
