@@ -11,6 +11,11 @@ class TemporaryError(Exception):
         super(TemporaryError, self).__init__(message)
         self.message = message
 
+class RateLimitExceeded(Exception):
+    def __init__(self, message=""):
+        super(RateLimitExceeded, self).__init__(message)
+        self.message = message
+
 class GitHubBase:
 
     token = None
@@ -76,6 +81,10 @@ class GitHub(GitHubBase):
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError as e:
+            if "X-RateLimit-Remaining" in response.headers:
+                if int(response.headers["X-RateLimit-Remaining"]) == 0:
+                    raise RateLimitExceeded(response.headers["X-RateLimit-Reset"])
+            logger.debug(response.content.decode('utf-8'))
             raise TemporaryError("{}: {}, {}".format(response.url, response.status_code, str(e)))
         return response.content.decode('utf-8'), response.headers
 

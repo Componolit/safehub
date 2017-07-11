@@ -8,8 +8,8 @@ def _exec(args, cwd=None, ok_codes=[0]):
     proc = subprocess.Popen(args, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
     logger.debug("{} : {}".format(" ".join(args), proc.returncode))
-    out_log = out.decode('utf-8').strip("\n")
-    err_log = err.decode('utf-8').strip("\n")
+    out_log = out.decode('utf-8').strip("\n").replace("\n", "\ ")
+    err_log = err.decode('utf-8').strip("\n").replace("\n", "\ ")
     if proc.returncode:
         logger.warn("{} returned with unusual code {} but was allowed to do so".format(" ".join(args), proc.returncode))
         logger.info("Output was: {}".format(out_log if out_log else err_log))

@@ -3,10 +3,12 @@
 import logging
 import logging.handlers
 import argparse
+import time
 from config import Config
 from user import User
 from organization import Organization
 from repository import Repository
+from github import RateLimitExceeded
 
 def get_parser():
     parser = argparse.ArgumentParser()
@@ -34,21 +36,23 @@ if __name__ == "__main__":
     else:
         logging.basicConfig(format='%(asctime)s [%(name)s] %(levelname)s: %(message)s', level=logl)
     cfg = Config()
-    for entry in cfg.load_config()["repositories"]:
-        with Repository(cfg.get_base_path(), entry["url"], entry["token"]) as r:
-            logger.info("Pulling {}".format(r.get_github_url()))
-            r.update()
-    for entry in cfg.load_config()["organizations"]:
-        with Organization(cfg.get_base_path(), entry["url"], entry["token"]) as o:
-            o.update()
-            for repo in o.get_repositories():
-                with Repository(cfg.get_base_path(), repo, entry["token"]) as r:
-                    logger.info("Pulling {}".format(r.get_github_url()))
-                    r.update()
-    for entry in cfg.load_config()["users"]:
-        with User(cfg.get_base_path(), entry["url"], entry["token"]) as u:
-            for repo in u.get_repositories():
-                with Repository(cfg.get_base_path(), repo, entry["token"]) as r:
-                    logger.info("Pulling {}".format(r.get_github_url()))
-                    r.update()
-
+    try:
+        for entry in cfg.load_config()["repositories"]:
+            with Repository(cfg.get_base_path(), entry["url"], entry["token"]) as r:
+                logger.info("Pulling {}".format(r.get_github_url()))
+                r.update()
+        for entry in cfg.load_config()["organizations"]:
+            with Organization(cfg.get_base_path(), entry["url"], entry["token"]) as o:
+                o.update()
+                for repo in o.get_repositories():
+                    with Repository(cfg.get_base_path(), repo, entry["token"]) as r:
+                        logger.info("Pulling {}".format(r.get_github_url()))
+                        r.update()
+        for entry in cfg.load_config()["users"]:
+            with User(cfg.get_base_path(), entry["url"], entry["token"]) as u:
+                for repo in u.get_repositories():
+                    with Repository(cfg.get_base_path(), repo, entry["token"]) as r:
+                        logger.info("Pulling {}".format(r.get_github_url()))
+                        r.update()
+    except RateLimitExceeded as re:
+        logger.fatal("Ratelimit exceeded. Reset at {}".format(time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(int(str(re))))))
