@@ -5,10 +5,7 @@ def _exec(args, cwd=None, ok_codes=[0]):
     proc = subprocess.Popen(args, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
     if proc.returncode not in ok_codes:
-        if err:
-            raise RuntimeError("{}:{}".format(proc.returncode, err))
-        else:
-            raise RuntimeError("{}:{}".format(proc.returncode, out))
+        raise RuntimeError("{} failed with status {} :{}".format(" ".join(args), proc.returncode, err if err else out))
     return out
 
 class Git:
@@ -36,7 +33,10 @@ class Git:
             return cls(path)
 
     def fetch(self):
-        _exec(['git', 'fetch', '--all'], self.cwd)
+        try:
+            _exec(['git', 'fetch', '--all'], self.cwd)
+        except FileNotFoundError as e:
+            print(str(e))
 
     def gen_file_list(self):
         filelist = _exec(['git', 'status', '-s'], self.cwd).decode('utf-8')
@@ -56,6 +56,6 @@ class Git:
         _exec(['git', 'commit', '-m', message, '-a'], self.cwd, ok_codes=[0,1])
 
     def push(self):
-        _exec(['git', 'push', 'origin', 'master'], self.cwd)
+        _exec(['git', 'push', 'origin', 'master'], self.cwd, ok_codes=[0,1])
         
 

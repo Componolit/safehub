@@ -8,11 +8,6 @@ class TemporaryError(Exception):
         super(TemporaryError, self).__init__(message)
         self.message = message
 
-class FatalError(Exception):
-    def __init__(self, message=""):
-        super(FatalError, self).__init__(message)
-        self.message = message
-
 class GitHubBase:
 
     token = None
@@ -77,10 +72,7 @@ class GitHub(GitHubBase):
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError as e:
-            if response.status_code >= 500 or response.status_code == 401:
-                raise TemporaryError("{}: {}, {}".format(response.url, response.status_code, str(e)))
-            else:
-                raise FatalError("{}: {}, {}".format(response.url, response.status_code, str(e)))
+            raise TemporaryError("{}: {}, {}".format(response.url, response.status_code, str(e)))
         return response.content.decode('utf-8'), response.headers
 
     def get_data(self, user, repo, path):
@@ -101,3 +93,9 @@ class GitHub(GitHubBase):
                     issues = self.fetch_repository(user, repo, cwd, "/issues/{}/".format(issue["number"]), ["comments", "events", "labels"])
         else:
             org_json = self.fetch_repository(user, repo, cwd, "/", ["members", "outside_collaborators", "teams", "hooks"])
+
+    def fetch_repositories(self, user):
+        return self.gen_data("/".join([self.base_url.strip("/"), "users", user, "repos"]))
+
+    def get_repo_data(self, user, repo):
+        return self.gen_data("/".join([self.base_url.strip("/"), "repos", user, repo]))

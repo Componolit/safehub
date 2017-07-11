@@ -195,6 +195,8 @@ class RepoTest(unittest.TestCase):
     def test_parse_url(self):
         self.assertEqual(("jklmnn", "safehub"), Repository._parse_url("https://github.com/jklmnn/safehub"))
         self.assertEqual(("jklmnn", "safehub"), Repository._parse_url("https://github.com/jklmnn/safehub.git"))
+        self.assertEqual(("Git", "git"), Repository._parse_url("https://github.com/Git/git"))
+        self.assertEqual(("Git", "git"), Repository._parse_url("https://github.com/Git/git.git"))
         self.assertRaises(ValueError, Repository._parse_url, "https://github.com/jklmnn")
         self.assertRaises(ValueError, Repository._parse_url, "https:/github.com/jklmnn/safehub.git")
         self.assertRaises(ValueError, Repository._parse_url, "https//github.com/jklmnn/safehub.git")
