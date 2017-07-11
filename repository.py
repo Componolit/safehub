@@ -1,6 +1,5 @@
 
 import os
-import re
 import logging
 from urllib.parse import urlparse
 
@@ -21,7 +20,10 @@ class Repository(Organization):
     @classmethod
     def _parse_url(cls, url):
         url_obj = urlparse(url)
-        user_repo = re.sub('\.git$', '', url_obj.path.strip("/")).split("/")
+        user_repo = url_obj.path.strip("/")
+        if user_repo.endswith(".git"):
+            user_repo = user_repo[:-4]
+        user_repo = user_repo.split("/")
         if not len(user_repo) == 2:
             raise ValueError("Invalid URL: {}".format(url))
         try:

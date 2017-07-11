@@ -51,8 +51,10 @@ class GitHubBase:
         for f in files:
             try:
                 data = self.get_data(user, repo, path + f + ("?state=all" if f == "issues" else ""))
+                if not f:
+                    f = repo
                 with open(cwd + path + f + ".json", 'w') as df:
-                    json.dump(data, df)
+                    json.dump(data, df, sort_keys=True, indent=4)
                 raw[f] = data
             except TemporaryError as e:
                 logger.warning(str(e))
@@ -86,7 +88,7 @@ class GitHub(GitHubBase):
 
     def fetch_api(self, user, repo, cwd):
         if repo:
-            repo_json = self.fetch_repository(user, repo, cwd, "/", ["collaborators", "comments", "keys", "forks", "pulls", "issues", "labels", "milestones"])
+            repo_json = self.fetch_repository(user, repo, cwd, "/", ["", "collaborators", "comments", "keys", "forks", "pulls", "issues", "labels", "milestones"])
             if "pulls" in repo_json:
                 for pull in repo_json["pulls"]:
                     pulls = self.fetch_repository(user, repo, cwd, "/pulls/{}/".format(pull["number"]), ["reviews", "comments", "requested_reviewers"])
