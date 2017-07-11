@@ -9,6 +9,7 @@ from user import User
 from organization import Organization
 from repository import Repository
 from github import RateLimitExceeded
+from setproctitle import setproctitle
 
 def get_parser():
     parser = argparse.ArgumentParser()
@@ -18,6 +19,7 @@ def get_parser():
     return parser
 
 if __name__ == "__main__":
+    setproctitle("safehub")
     args = get_parser().parse_args()
     logger = logging.getLogger(__name__)
     if args.verbose and args.quiet:
