@@ -4,6 +4,7 @@ import logging
 import logging.handlers
 import argparse
 import time
+import sys
 from config import Config
 from user import User
 from organization import Organization
@@ -33,10 +34,12 @@ if __name__ == "__main__":
         logl = logging.INFO
     if args.syslog:
         handler = logging.handlers.SysLogHandler(address='/dev/log', facility=logging.handlers.SysLogHandler.LOG_USER)
-        logger.addHandler(handler)
+#        logger.addHandler(handler)
         logging.basicConfig(format='[safehub] %(levelname)s: %(message)s', level=logl, handlers=[handler])
     else:
-        logging.basicConfig(format='%(asctime)s [%(name)s] %(levelname)s: %(message)s', level=logl)
+        handler = logging.StreamHandler(sys.stdout)
+#        logger.addHandler(handler)
+        logging.basicConfig(format='%(asctime)s [%(name)s] %(levelname)s: %(message)s', level=logl, handlers=[handler])
     cfg = Config()
     try:
         for entry in cfg.load_config()["repositories"]:

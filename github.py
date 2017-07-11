@@ -81,9 +81,11 @@ class GitHub(GitHubBase):
             raise TemporaryError
         if "X-RateLimit-Remaining" in response.headers:
             if int(response.headers["X-RateLimit-Remaining"]) < 10:
-                sleeptime = int(int(response.headers["X-RateLimit-Reset"]) - time.time())
+                sleeptime = int(int(response.headers["X-RateLimit-Reset"]) - time.time()) + 5
                 logger.warning("RateLimit nearly depleted, waiting {}s to get new resources".format(sleeptime))
                 time.sleep(sleeptime)
+                if int(response.headers["X-RateLimit-Remaining"]) == 0:
+                    return self._get(url)
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError as e:
