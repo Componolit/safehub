@@ -56,7 +56,7 @@ class GitHubBase:
             os.makedirs(cwd + path)
         for f in files:
             try:
-                data = self.get_data(user, repo, path + f + ("?state=all" if f == "issues" else ""))
+                data = self.get_data(user, repo, path + f + "?per_page=100" + ("&state=all" if f in ["issues", "pulls"] else ""))
                 if not f:
                     f = repo
                 with open(cwd + path + f + ".json", 'w') as df:
