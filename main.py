@@ -17,6 +17,7 @@ def get_parser():
     parser.add_argument("-v", "--verbose", help="print debug output", action="store_true")
     parser.add_argument("-q", "--quiet", help="print less output", action="store_true")
     parser.add_argument("-s", "--syslog", help="log to syslog", action="store_true")
+    parser.add_argument("-l", "--logfile", help="use a file to store logs")
     return parser
 
 if __name__ == "__main__":
@@ -34,11 +35,11 @@ if __name__ == "__main__":
         logl = logging.INFO
     if args.syslog:
         handler = logging.handlers.SysLogHandler(address='/dev/log', facility=logging.handlers.SysLogHandler.LOG_USER)
-#        logger.addHandler(handler)
         logging.basicConfig(format='[safehub] %(levelname)s: %(message)s', level=logl, handlers=[handler])
+    elif args.logfile:
+        logging.basicConfig(format='[safehub] %(levelname)s: %(message)s', level=logl, filename=args.logfile)
     else:
         handler = logging.StreamHandler(sys.stdout)
-#        logger.addHandler(handler)
         logging.basicConfig(format='%(asctime)s [%(name)s] %(levelname)s: %(message)s', level=logl, handlers=[handler])
     cfg = Config()
     try:
