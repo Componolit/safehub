@@ -4,6 +4,7 @@ import json
 import time
 import logging
 import requests
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -56,14 +57,18 @@ class GitHubBase:
         
     def fetch_repository(self, user, repo, cwd, path, files):
         raw = {}
-        if not os.path.isdir(cwd + path):
-            os.makedirs(cwd + path)
+        cwd = Path(cwd)
+        path = Path("") if path == "/" else Path(path)
+        if path.is_absolute():
+            raise ValueError("path must not be absolute: {}".format(str(path)))
+        if not os.path.isdir(str(cwd / path)):
+            os.makedirs(str(cwd / path))
         for f in files:
             try:
-                data = self.get_data(user, repo, path + f + "?per_page=100" if f else "" + ("&state=all" if f in ["issues", "pulls"] else ""))
+                data = self.get_data(user, repo, str(path / (f + "?per_page=100" if f else "" + ("&state=all" if f in ["issues", "pulls"] else ""))))
                 if not f:
                     f = repo
-                with open(cwd + path + f + ".json", 'w') as df:
+                with open(str(cwd / path / (f + ".json")), 'w') as df:
                     json.dump(data, df, sort_keys=True, indent=4)
                 raw[f] = data
             except TemporaryError as e:
@@ -71,17 +76,19 @@ class GitHubBase:
         return raw
 
     def _get_data(self, user, repo, path):
-        return self.gen_data("/".join(p for p in [self.base_url.strip("/"),
-                                       "repos" if repo else "orgs",
-                                       user.strip("/"),
-                                       repo.strip("/") if repo else "",
-                                       path.strip("/")] if p != ""))
+        return self.gen_data(self.base_url + str(
+            Path("repos" if repo else "orgs")/
+            Path(user)/
+            Path(repo if repo else "")/
+            Path(path)))
 
     def fetch_repositories(self, user):
-        return self.gen_data("/".join([self.base_url.strip("/"), "users", user, "repos"]))
+        return self.gen_data(self.base_url + str(
+            Path("users") / Path(user) / Path("repos")))
 
     def get_repo_data(self, user, repo):
-        return self.gen_data("/".join([self.base_url.strip("/"), "repos", user, repo]))
+        return self.gen_data(self.base_url + str(
+            Path("repos") / Path(user) / Path(repo)))
 
 class GitHub(GitHubBase):
 
@@ -119,13 +126,13 @@ class GitHub(GitHubBase):
 
     def fetch_api(self, user, repo, cwd):
         if repo:
-            repo_json = self.fetch_repository(user, repo, cwd, "/", ["", "collaborators", "comments", "keys", "forks", "pulls", "issues", "labels", "milestones"])
+            repo_json = self.fetch_repository(user, repo, cwd, "", ["", "collaborators", "comments", "keys", "forks", "pulls", "issues", "labels", "milestones"])
             if "pulls" in repo_json:
                 for pull in repo_json["pulls"]:
-                    pulls = self.fetch_repository(user, repo, cwd, "/pulls/{}/".format(pull["number"]), ["reviews", "comments", "requested_reviewers"])
+                    pulls = self.fetch_repository(user, repo, cwd, "pulls/{}".format(pull["number"]), ["reviews", "comments", "requested_reviewers"])
             if "issues" in repo_json:
                 for issue in repo_json["issues"]:
-                    issues = self.fetch_repository(user, repo, cwd, "/issues/{}/".format(issue["number"]), ["comments", "events", "labels"])
+                    issues = self.fetch_repository(user, repo, cwd, "issues/{}".format(issue["number"]), ["comments", "events", "labels"])
         else:
-            org_json = self.fetch_repository(user, repo, cwd, "/", ["members", "outside_collaborators", "teams", "hooks"])
+            org_json = self.fetch_repository(user, repo, cwd, "", ["members", "outside_collaborators", "teams", "hooks"])
 

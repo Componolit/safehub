@@ -2,6 +2,7 @@
 import os
 import logging
 from urllib.parse import urlparse
+from pathlib import Path
 from github import GitHub
 
 logger = logging.getLogger(__name__)
@@ -30,22 +31,22 @@ class User:
     def _gen_path(cls, base, user=None, repo=None, part=None):
         if part not in ["wiki", "code", "meta", None]:
             raise ValueError("Invalid part: {}".format(part))
-        base = base.rstrip("/")
+        base = Path(base)
         if user:
-            base += "/{}".format(user)
+            base /= "{}".format(user)
             if repo:
-                base += "/{}".format(repo)
+                base /= "{}".format(repo)
                 if part:
-                    base += "/{}.git".format(part)
+                    base /= "{}.git".format(part)
             else:
                 if part == "meta":
-                    base += "/{}.git".format(part)
+                    base /= "{}.git".format(part)
                 elif part:
                     raise RuntimeError("If part is set and not meta, repo must not be None")
         else:
             if repo or part:
                 raise RuntimeError("If repo or part is set, user must not be None")
-        return base
+        return str(base)
 
     def connect(self, url):
         self.user = User._parse_url(url)

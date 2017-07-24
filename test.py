@@ -262,9 +262,9 @@ class GitHubTest(unittest.TestCase, GitHubBase):
         self.assertEqual([1,2,2,3,3,3], self._gen_data("one"))
 
     def test_fetch(self):
-        self.fetch_repository("user", "repo", self.basepath, "/", ["file1", "file2"])
-        self.fetch_repository("user", "repo", self.basepath, "/dir/", ["file3", "file4"])
-        self.fetch_repository(None, "repo", self.basepath, "/", ["file5", "file6"])
+        self.fetch_repository("user", "repo", self.basepath, "", ["file1", "file2"])
+        self.fetch_repository("user", "repo", self.basepath, "dir", ["file3", "file4"])
+        self.fetch_repository(None, "repo", self.basepath, "", ["file5", "file6"])
         for f in ["/file1.json", "/file2.json", "/dir/file3.json", "/dir/file4.json"]:
             with open(self.basepath + f, 'r') as tf:
                 self.assertEqual("[]", tf.read())

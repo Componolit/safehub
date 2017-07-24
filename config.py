@@ -2,6 +2,7 @@
 import os
 import re
 import json
+from pathlib import Path
 
 
 def get_base_path():
@@ -32,7 +33,7 @@ class ConfigBase:
         SYS_UID_MIN = 100
         SYS_UID_MAX = 999
         if uid == 0:
-            return "/" + home.strip("/") + "/.safehub"
+            return str(Path("/") /  Path(home)  / Path(".safehub"))
         tabsplit = re.compile("[\t ]+")
         for line in login_defs:
             line = line.strip('\n')
@@ -45,9 +46,9 @@ class ConfigBase:
             elif line.startswith("SYS_UID_MAX"):
                 SYS_UID_MAX = int(tabsplit.split(line)[1])
         if uid <= UID_MAX and uid >= UID_MIN:
-            return "/" + home.strip("/") + "/.safehub"
+            return str(Path("/") / Path(home) / Path(".safehub"))
         elif uid <= SYS_UID_MAX and uid >= SYS_UID_MIN:
-            return "/" + home.strip("/")
+            return str(Path("/") / Path(home))
         else:
             raise ValueError("UID outside defined UID ranges.")
 
