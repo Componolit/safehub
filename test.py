@@ -240,6 +240,8 @@ class GitHubTest(unittest.TestCase, GitHubBase):
             raise TemporaryError
         return []
 
+    def gen_data(self, url):
+        return url
 
     def test_inst(self):
         GitHub("")
@@ -257,7 +259,7 @@ class GitHubTest(unittest.TestCase, GitHubBase):
         self.assertIsNone(prev)
 
     def test_page_gen(self):
-        self.assertEqual([1,2,2,3,3,3], self.gen_data("one"))
+        self.assertEqual([1,2,2,3,3,3], self._gen_data("one"))
 
     def test_fetch(self):
         self.fetch_repository("user", "repo", self.basepath, "/", ["file1", "file2"])
@@ -269,3 +271,9 @@ class GitHubTest(unittest.TestCase, GitHubBase):
         self.assertFalse(os.path.isfile(self.basepath + "/file5"))
         self.assertFalse(os.path.isfile(self.basepath + "/file6"))
 
+    def test_get_data(self):
+        self.assertEqual("https://api.github.com/repos/user/repo/path", self._get_data("user", "repo", "path"))
+        self.assertEqual("https://api.github.com/orgs/user/path", self._get_data("user", "", "path"))
+        self.assertEqual("https://api.github.com/repos/user/repo", self._get_data("user", "repo", ""))
+        self.assertEqual("https://api.github.com/users/user/repos", self.fetch_repositories("user"))
+        self.assertEqual("https://api.github.com/repos/user/repo", self.get_repo_data("user", "repo"))

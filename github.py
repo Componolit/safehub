@@ -19,6 +19,7 @@ class RateLimitExceeded(Exception):
 
 class GitHubBase:
 
+    base_url = "https://api.github.com/"
     token = None
 
     def _get(self, url):
@@ -37,6 +38,9 @@ class GitHubBase:
                 data["prev"] if "prev" in data else None)
 
     def gen_data(self, url):
+        raise NotImplementedError
+
+    def _gen_data(self, url):
         content, headers = self._get(url)
         data = json.loads(content)
         if "Link" in headers:
@@ -66,13 +70,27 @@ class GitHubBase:
                 logger.warning(str(e))
         return raw
 
+    def _get_data(self, user, repo, path):
+        return self.gen_data("/".join(p for p in [self.base_url.strip("/"),
+                                       "repos" if repo else "orgs",
+                                       user.strip("/"),
+                                       repo.strip("/") if repo else "",
+                                       path.strip("/")] if p != ""))
+
+    def fetch_repositories(self, user):
+        return self.gen_data("/".join([self.base_url.strip("/"), "users", user, "repos"]))
+
+    def get_repo_data(self, user, repo):
+        return self.gen_data("/".join([self.base_url.strip("/"), "repos", user, repo]))
 
 class GitHub(GitHubBase):
 
     def __init__(self, token):
         self.session = requests.Session()
         self.session.headers.update({'Authorization': 'token {}'.format(token)})
-        self.base_url = "https://api.github.com/"
+
+    def get_data(self, user, repo, path):
+        return self._get_data(user, repo, path)
 
     def _get(self, url):
         try:
@@ -96,12 +114,8 @@ class GitHub(GitHubBase):
             raise TemporaryError("{}: {}, {}".format(response.url, response.status_code, str(e)))
         return response.content.decode('utf-8'), response.headers
 
-    def get_data(self, user, repo, path):
-        return self.gen_data("/".join(p for p in [self.base_url.strip("/"),
-                                       "repos" if repo else "orgs",
-                                       user.strip("/"),
-                                       repo.strip("/") if repo else "",
-                                       path.strip("/")] if p != ""))
+    def gen_data(self, url):
+        return self._gen_data(url)
 
     def fetch_api(self, user, repo, cwd):
         if repo:
@@ -115,8 +129,3 @@ class GitHub(GitHubBase):
         else:
             org_json = self.fetch_repository(user, repo, cwd, "/", ["members", "outside_collaborators", "teams", "hooks"])
 
-    def fetch_repositories(self, user):
-        return self.gen_data("/".join([self.base_url.strip("/"), "users", user, "repos"]))
-
-    def get_repo_data(self, user, repo):
-        return self.gen_data("/".join([self.base_url.strip("/"), "repos", user, repo]))
