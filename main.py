@@ -5,11 +5,16 @@ import logging.handlers
 import argparse
 import time
 import sys
+import os
+import socket
+import traceback
+from smtplib import SMTP
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from config import Config
 from user import User
 from organization import Organization
 from repository import Repository
-from github import RateLimitExceeded
 from setproctitle import setproctitle
 
 def get_parser():
@@ -18,6 +23,7 @@ def get_parser():
     parser.add_argument("-q", "--quiet", help="print less output", action="store_true")
     parser.add_argument("-s", "--syslog", help="log to syslog", action="store_true")
     parser.add_argument("-l", "--logfile", help="use a file to store logs")
+    parser.add_argument("-m", "--mailto", help="receiving email address in case of an error")
     return parser
 
 if __name__ == "__main__":
@@ -60,5 +66,13 @@ if __name__ == "__main__":
                     with Repository(cfg.get_base_path(), repo, entry["token"]) as r:
                         logger.info("Pulling {}".format(r.get_github_url()))
                         r.update()
-    except RateLimitExceeded as re:
-        logger.fatal("Ratelimit exceeded. Reset at {}".format(time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(int(str(re))))))
+    except Exception as e:
+        logger.fatal("Fatal failure, cannot recover: {}".format(str(e)))
+        if args.mailto:
+            message = MIMEMultipart()
+            message['Subject'] = "Safehub error"
+            message['To'] = args.mailto
+            message['From'] = "{}@{}".format(os.getenv("USER"), socket.getfqdn())
+            message.attach(MIMEText(traceback.format_exc()))
+            with SMTP('localhost') as smtp:
+                smtp.send_message(message)
