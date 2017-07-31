@@ -24,6 +24,7 @@ def get_parser():
     parser.add_argument("-s", "--syslog", help="log to syslog", action="store_true")
     parser.add_argument("-l", "--logfile", help="use a file to store logs")
     parser.add_argument("-m", "--mailto", help="receiving email address in case of an error")
+    parser.add_argument("--ssh", help="use ssh to clone git repositories", action="store_true")
     return parser
 
 if __name__ == "__main__":
@@ -50,20 +51,20 @@ if __name__ == "__main__":
     cfg = Config()
     try:
         for entry in cfg.load_config()["repositories"]:
-            with Repository(cfg.get_base_path(), entry["url"], entry["token"]) as r:
+            with Repository(cfg.get_base_path(), entry["url"], entry["token"], use_ssh = args.ssh) as r:
                 logger.info("Pulling {}".format(r.get_github_url()))
                 r.update()
         for entry in cfg.load_config()["organizations"]:
             with Organization(cfg.get_base_path(), entry["url"], entry["token"]) as o:
                 o.update()
                 for repo in o.get_repositories():
-                    with Repository(cfg.get_base_path(), repo, entry["token"]) as r:
+                    with Repository(cfg.get_base_path(), repo, entry["token"], use_ssh = args.ssh) as r:
                         logger.info("Pulling {}".format(r.get_github_url()))
                         r.update()
         for entry in cfg.load_config()["users"]:
             with User(cfg.get_base_path(), entry["url"], entry["token"]) as u:
                 for repo in u.get_repositories():
-                    with Repository(cfg.get_base_path(), repo, entry["token"]) as r:
+                    with Repository(cfg.get_base_path(), repo, entry["token"], use_ssh = args.ssh) as r:
                         logger.info("Pulling {}".format(r.get_github_url()))
                         r.update()
     except Exception as e:

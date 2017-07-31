@@ -31,13 +31,17 @@ class Repository(Organization):
         except IndexError:
             raise ValueError("Invalid URL: {}".format(url))
 
-    @classmethod
-    def _gen_code_git_url(cls, user, repo):
-        return "git://github.com/{}/{}.git".format(user, repo)
+    def _gen_code_git_url(self, user, repo):
+        if self.ssh:
+            return "github.com:{}/{}.git".format(user, repo)
+        else:
+            return "git://github.com/{}/{}.git".format(user, repo)
 
-    @classmethod
-    def _gen_wiki_git_url(cls, user, repo):
-        return "git://github.com/{}/{}.wiki.git".format(user, repo)
+    def _gen_wiki_git_url(self, user, repo):
+        if self.ssh:
+            return "github.com:{}/{}.wiki.git".format(user, repo)
+        else:
+            return "git://github.com/{}/{}.wiki.git".format(user, repo)
 
     def get_github_url(self):
         return "https://github.com/{}/{}".format(self.user, self.repo)
@@ -47,7 +51,8 @@ class Repository(Organization):
 
     def _update(self, part):
         repo = getattr(self, part)
-        get_path = getattr(Repository, "_gen_{}_git_url".format(part))
+        get_path = getattr(self, "_gen_{}_git_url".format(part))
+        logger.debug("Cloning {}".format(get_path(self.user, self.repo)))
         if not os.path.isdir(self.local_path(part)):
             try:
                 repo = Git.mirror(get_path(self.user, self.repo), self.local_path(part), instantiate=True)

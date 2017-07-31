@@ -9,11 +9,12 @@ logger = logging.getLogger(__name__)
 
 class User:
 
-    def __init__(self, base, url, token):
+    def __init__(self, base, url, token, use_ssh=False):
         self.base = base
         self.gh = GitHub(token)
         self.connect(url)
         self.init_fs()
+        self.ssh = use_ssh
 
     @classmethod
     def _parse_url(cls, url):

@@ -182,7 +182,7 @@ class OrgTest(unittest.TestCase):
         self.assertEqual("jklmnn", Organization._parse_url("https://github.com/jklmnn"))
         self.assertRaises(ValueError, Organization._parse_url, "https.//github.com/jklmnn/safehub")
 
-class RepoTest(unittest.TestCase):
+class RepoTest(unittest.TestCase, Repository):
 
     def test_inst(self):
         r = Repository("/tmp/safehub_repository_test.{}".format(os.getpid()), "https://github.com/jklmnn/safehub", "")
@@ -201,11 +201,17 @@ class RepoTest(unittest.TestCase):
         self.assertRaises(ValueError, Repository._parse_url, "https:/github.com/jklmnn/safehub.git")
         self.assertRaises(ValueError, Repository._parse_url, "https//github.com/jklmnn/safehub.git")
 
-    def test_gen_repo_git_url(self):
-        self.assertEqual("git://github.com/jklmnn/safehub.git", Repository._gen_code_git_url("jklmnn", "safehub"))
+    def test_gen_repo_url(self):
+        self.ssh = False
+        self.assertEqual("git://github.com/jklmnn/safehub.git", self._gen_code_git_url("jklmnn", "safehub"))
+        self.ssh = True
+        self.assertEqual("github.com:jklmnn/safehub.git", self._gen_code_git_url("jklmnn", "safehub"))
 
     def test_gen_wiki_git_url(self):
-        self.assertEqual("git://github.com/jklmnn/safehub.wiki.git", Repository._gen_wiki_git_url("jklmnn", "safehub"))
+        self.ssh = False
+        self.assertEqual("git://github.com/jklmnn/safehub.wiki.git", self._gen_wiki_git_url("jklmnn", "safehub"))
+        self.ssh = True
+        self.assertEqual("github.com:jklmnn/safehub.wiki.git", self._gen_wiki_git_url("jklmnn", "safehub"))
 
     def test_gen_path(self):
         base = "/base/"
